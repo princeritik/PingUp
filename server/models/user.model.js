@@ -14,10 +14,6 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
   },
-  password: {
-    type: String,
-    required: true,
-  },
   bio: {
     type: String,
     default: "Hey there! I am using PingUp",

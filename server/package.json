@@ -12,12 +12,15 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@clerk/express": "^2.1.36",
+    "@imagekit/nodejs": "^7.9.1",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "inngest": "^4.11.0",
     "mongoose": "^9.7.4",
-    "multer": "^2.2.0"
+    "multer": "^2.2.0",
+    "nodemailer": "^9.0.3"
   },
   "devDependencies": {
     "nodemon": "^3.1.14"

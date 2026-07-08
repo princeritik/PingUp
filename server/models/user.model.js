@@ -16,7 +16,6 @@ const userSchema = new mongoose.Schema({
   },
 
   full_name:{
->>>>>>> 7745503 (Implement user authentication, connection management, and email notifications; add multer for file uploads and integrate ImageKit for image handling)
     type: String,
     required: true,
   },

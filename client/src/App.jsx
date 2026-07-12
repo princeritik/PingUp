@@ -50,14 +50,14 @@ function App() {
   }, [user, getToken, dispatch]);
 
   useEffect(() => {
-      //console.log("APP SSE EFFECT RUNNING", currentUser?._id);
+    //console.log("APP SSE EFFECT RUNNING", currentUser?._id);
     if (!currentUser?._id) return;
 
     const eventSource = new EventSource(
       `${api.defaults.baseURL}/api/message/${currentUser._id}`
     );
 
-    eventSource.onmessage = async(event) => {
+    eventSource.onmessage = async (event) => {
       try {
         const message = JSON.parse(event.data);
 
@@ -82,7 +82,7 @@ function App() {
           return;
         }
 
-       
+
         const isCurrentChatOpen =
           pathnameRef.current === `/messages/${senderId}`;
 
@@ -95,7 +95,7 @@ function App() {
 
           const token = await getToken();
 
-          const {data} = await api.post(
+          const { data } = await api.post(
             "/api/message/seen",
             {
               from_user_id: senderId,

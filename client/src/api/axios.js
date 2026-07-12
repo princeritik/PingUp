@@ -1,6 +1,10 @@
 import axios from "axios";
 
-const baseURL = import.meta.env.VITE_BACKEND_URL.replace(/\/+$/, "");
+const backendURL =
+  import.meta.env.VITE_BACKEND_URL ||
+  "https://ping-up-server-delta.vercel.app";
+
+const baseURL = backendURL.replace(/\/+$/, "");
 
 const api = axios.create({
   baseURL,

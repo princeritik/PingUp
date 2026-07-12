@@ -127,14 +127,14 @@ export const discoverUsers = async (req, res) => {
 
     const allUsers = await User.find({
       $or: [
-        { username: new RegExp(input, i) },
-        { email: new RegExp(input, i) },
-        { full_name: new RegExp(input, i) },
-        { location: new RegExp(input, i) },
+        { username: new RegExp(input, 'i') },
+        { email: new RegExp(input, 'i') },
+        { full_name: new RegExp(input, 'i') },
+        { location: new RegExp(input, 'i') },
       ],
     });
 
-    const filteredUsers = allUsers.filter((user) => user._id !== useId);
+    const filteredUsers = allUsers.filter((user) => user._id !== userId);
 
     return res.json({
       success: true,
@@ -154,19 +154,34 @@ export const followUser = async (req, res) => {
     const { userId } = req.auth();
     const { id } = req.body;
 
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
     if (user.following.includes(id)) {
       return res.json({
         success: false,
-        message: "You are already following this User",
+        message: "You are already following this user",
+      });
+    }
+
+    const toUser = await User.findById(id);
+
+    if (!toUser) {
+      return res.json({
+        success: false,
+        message: "Target user not found",
       });
     }
 
     user.following.push(id);
     await user.save();
 
-    const toUser = await User.findById(id);
     toUser.followers.push(userId);
     await toUser.save();
 
@@ -174,8 +189,9 @@ export const followUser = async (req, res) => {
       success: true,
       message: "Now you are following this user",
     });
+
   } catch (error) {
-    res.json({
+    return res.json({
       success: false,
       message: error.message,
     });
@@ -188,12 +204,12 @@ export const unFollowUser = async (req, res) => {
     const { userId } = req.auth();
     const { id } = req.body;
 
-    const user = User.findById(userId);
+    const user = await User.findById(userId);
 
     user.following = user.following.filter((user) => user != id);
     await user.save();
 
-    const toUser = User.findById(id);
+    const toUser = await User.findById(id);
     toUser.followers = toUser.followers.filter((user) => user != userId);
     await toUser.save();
 
@@ -277,26 +293,31 @@ export const getUserConnection = async (req, res) => {
     const { userId } = req.auth();
 
     const user = await User.findById(userId).populate(
-      "connections followers following ",
+      "connections followers following"
     );
 
-    const connections = user.connections;
-    const followers = user.followers;
-    const following = user.following;
+    if (!user) {
+      return res.json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
     const pendingConnections = (
-      await Connection.find({ to_user_id: userId, status: "pending" }).populate(
-        "from_user_id",
-      )
+      await Connection.find({
+        to_user_id: userId,
+        status: "pending",
+      }).populate("from_user_id")
     ).map((connection) => connection.from_user_id);
 
     return res.json({
       success: true,
-      connections,
-      followers,
-      following,
+      connections: user.connections,
+      followers: user.followers,
+      following: user.following,
       pendingConnections,
     });
+
   } catch (error) {
     return res.json({
       success: false,

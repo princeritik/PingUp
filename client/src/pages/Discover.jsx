@@ -1,25 +1,54 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { dummyConnectionsData } from '../assets/assets';
 import {Search} from "lucide-react"
 import UserCard from '../components/UserCard';
 import Loading from "../components/Loading"
+import { useAuth } from '@clerk/react';
+import api from '../api/axios';
+import { useDispatch } from 'react-redux';
+import { fetchUser } from '../features/user/userSlice.js';
+import toast from 'react-hot-toast';
 
 export default function Discover() {
 
+  const dispatch = useDispatch();
+  const {getToken} = useAuth();
   const [input, setInput] = useState("");
-  const [users, setUsers] = useState(dummyConnectionsData);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false)
 
   const handleSearch = async (e) => {
     if (e.key === 'Enter') {
-      setUsers([])
-      setLoading(true)
-      setTimeout(() => {
-        setUsers(dummyConnectionsData)
+      try {
+        setUsers([]);
+        setLoading(true);
+        const {data} = await api.post('/api/user/discover', {input}, {
+          headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+        })
+
+        if(data.success){
+          setUsers(data.users);
+        }
+        else{
+          toast.error(data.message)
+        }
+        setLoading(false);
+        setInput('');
+
+      } catch (error) {
+        toast.error(error.message)
         setLoading(false)
-      }, 1000);
+      }
     }
   }
+
+  useEffect(()=> {
+    getToken().then((token)=> {
+      dispatch(fetchUser(token))
+    })
+  },[])
 
 
   return (

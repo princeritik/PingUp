@@ -3,15 +3,45 @@ import React, { useState } from 'react'
 import moment from "moment"
 import { dummyUserData } from '../assets/assets'
 import { useNavigate } from 'react-router-dom'
+import { useSelector } from 'react-redux'
+import { useAuth } from '@clerk/react'
+import api from '../api/axios.js'
+import toast from 'react-hot-toast'
 
 export default function PostCard({post}) {
 
     const postWithHashtags = post.content.replace(/(#\w+)/g, '<span class="text-indigo-600">$1 </span>')
     const [likes , setLikes] = useState(post.likes_count)
-    const currentUser = dummyUserData
+    const currentUser = useSelector((state) => state.user.value)
+
+    const {getToken} = useAuth();
+
 
     const handleLike = async()=>{
+        try {
+            const {data} =  await api.post('/api/post/like', {postId: post._id}, {
+                headers: {
+                    Authorization: `Bearer ${await getToken()}`,
+                },
+            })
 
+            if(data.success){
+                toast.success(data.message);
+                setLikes(prev => {
+                    if(prev.includes(currentUser._id)){
+                        return prev.filter(id => id !== currentUser._id)
+                    }
+                    else{
+                        return [...prev, currentUser._id]
+                    }
+                })
+            }else{
+                toast.error(data.message);
+            }
+
+        } catch (error) {
+            toast.error(error.message);
+        }
     }
  
     const navigate = useNavigate();
@@ -29,7 +59,7 @@ export default function PostCard({post}) {
                     <BadgeCheck className='w-4 h-4 text-blue-500 ' />
                 </div>
                 <div className='text-gray-500 text-sm'>
-                    @{post.user.username} . {moment(post.createdAt).fromNow}
+                    @{post.user.username} . {moment(post.createdAt).fromNow()}
                 </div>
             </div>
         </div>
@@ -49,17 +79,23 @@ export default function PostCard({post}) {
         {/* actions */}
         <div className='flex items-center gap-4 text-gray-600 text-sm pt-2 border-t border-gray-300'>
             <div className='flex items-center gap-1'>
-                <Heart className={`w-4 h-4 cursor-pointer ${likes.includes(currentUser._id && 'text-red-500 fill-red-500')} `} 
-                    onClick={handleLike}/>
+                <Heart
+                    className={`w-4 h-4 cursor-pointer ${
+                        likes.includes(currentUser?._id)
+                        ? "text-red-500 fill-red-500"
+                        : ""
+                    }`}
+                    onClick={handleLike}
+                    />
                 <span>{likes.length} </span>
             </div>
             <div className='flex items-center gap-1'>
                 <MessageCircle className='h-4 w-4' />
-                <span>{12} </span>
+                <span>{0} </span>
             </div>
             <div className='flex items-center gap-1'>
-                <Share2 className='h-4 w-4' onClick={handleLike}/>
-                <span>{7} </span>
+                <Share2 className='h-4 w-4' />
+                <span>{0} </span>
             </div>
         </div>
     </div>

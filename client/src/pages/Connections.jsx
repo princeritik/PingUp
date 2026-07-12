@@ -1,18 +1,21 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import {Users , UserPlus, UserCheck, UserRoundPen, MessagesSquare, icons, User} from 'lucide-react'
 import {data, useNavigate} from "react-router-dom"
-import {
-  dummyConnectionsData as connections,
-  dummyFollowersData as followers,
-  dummyFollowingData as following,
-  dummyPendingConnectionsData as pendingConnections
+import { useSelector, useDispatch } from 'react-redux';
+import { useAuth } from '@clerk/react';
+import { fetchConnections } from '../features/connections/connectionSlice.js';
+import api from '../api/axios';
+import toast from 'react-hot-toast';
 
-} from "../assets/assets"
 
 export default function Connections() {
 
+  const {getToken} = useAuth();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [currentTab, setCurrentTab] = useState("Followers")
+
+  const {connections, pendingConnections, followers, following} = useSelector((state) => state.connections)
 
   const dataArray = [
     {label: 'Followers', value: followers, icons: Users},
@@ -20,6 +23,56 @@ export default function Connections() {
     {label: 'Pending', value: pendingConnections, icons: UserRoundPen},
     {label: 'Connections', value: connections, icons: UserPlus},
   ]
+
+  const handleUnfollow = async(userId)=> {
+    try {
+      const token = await getToken();
+      const {data} = await api.post('/api/user/unfollow', {id:userId}, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+
+      if(data.success){
+        toast.success(data.message);
+        dispatch(fetchConnections(token))
+      }
+      else{
+        toast(data.message);
+      }
+
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
+
+   const acceptConnection = async(userId)=> {
+    try {
+      const {data} = await api.post('/api/user/accept', {id:userId}, {
+        headers: {
+          Authorization: `Bearer ${await getToken()}`,
+        },
+      })
+
+      if(data.success){
+        toast.success(data.message);
+        dispatch(fetchConnections(await getToken()))
+      }
+      else{
+        toast(data.message);
+      }
+
+    } catch (error) {
+      toast.error(error.message);
+    }
+  }
+
+
+  useEffect(()=> {
+    getToken().then((token)=> {
+      dispatch(fetchConnections(token))
+    })
+  },[getToken, dispatch])
 
   return (
     <div className='min-h-screen bg-slate-50' >
@@ -86,7 +139,7 @@ export default function Connections() {
                       }
                       {
                         currentTab === 'Following' && (
-                        <button className='w-full p-2 text-sm rounded bg-slate-100
+                        <button onClick={()=> handleUnfollow(user._id)} className='w-full p-2 text-sm rounded bg-slate-100
                         hover:bg-slate-200 text-black active:scale-95 transition
                         cursor-pointer'>
                         Unfollow
@@ -96,7 +149,7 @@ export default function Connections() {
                       }
                       {
                         currentTab === 'Pending' && (
-                        <button className='w-full p-2 text-sm rounded bg-slate-100
+                        <button onClick={()=> acceptConnection(user._id)} className='w-full p-2 text-sm rounded bg-slate-100
                         hover:bg-slate-200 text-black active:scale-95 transition
                         cursor-pointer'>
                         Accept
@@ -109,7 +162,7 @@ export default function Connections() {
                         <button className='w-full p-2 text-sm rounded bg-slate-100
                         hover:bg-slate-200 text-black active:scale-95 transition
                         cursor-pointer flex items-center justify-center gap-1'
-                          onClick={()=> navigate(`/message/${user._id}`)}>
+                          onClick={()=> navigate(`/messages/${user._id}`)}>
                           <MessagesSquare className='w-4 h-4' />
                           Message
                         </button>
